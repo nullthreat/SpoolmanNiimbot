@@ -32,6 +32,7 @@ No Spoolman? Print PNGs you exported from it instead:
 ```bash
 python cli/print_labels.py mylabel.png --port COM3
 ```
+<img width="1045" height="623" alt="image" src="https://github.com/user-attachments/assets/d2497c86-9b3f-4baa-a7c4-e281234351ca" />
 
 ## Requirements
 
