@@ -1,0 +1,19 @@
+.git
+.gitignore
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+# generated label/test artifacts
+previews*/
+preview*/
+testdata/
+*.preview.png
+calibration_*.png
+calib_split_*.png
+# docs/editor
+.vscode/
+.idea/
+.DS_Store
+LLM.md

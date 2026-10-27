@@ -219,6 +219,13 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 if __name__ == "__main__":
-    print("Open http://127.0.0.1:8777 in your browser")
+    import os
+
+    # Defaults to localhost for a normal desktop run. In Docker, HOST is set to
+    # 0.0.0.0 so the published port is reachable from the host.
+    host = os.environ.get("HOST", "127.0.0.1")
+    port = int(os.environ.get("PORT", "8777"))
+    shown = "127.0.0.1" if host in ("127.0.0.1", "0.0.0.0") else host
+    print(f"Open http://{shown}:{port} in your browser")
     # Set reload=True while developing to auto-restart on source changes.
-    uvicorn.run(app, host="127.0.0.1", port=8777, log_level="info")
+    uvicorn.run(app, host=host, port=port, log_level="info")

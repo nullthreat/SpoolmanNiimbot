@@ -45,6 +45,30 @@ python cli/print_labels.py mylabel.png --port COM3
 pip install -r requirements.txt
 ```
 
+## Docker
+
+Best suited to running on a **Linux host** (e.g. a Raspberry Pi or server with
+the printer attached). Build and run:
+
+```bash
+docker build -t spoolman-niimbot .
+
+# Linux host — pass the USB serial device through so printing works.
+# Find it with `ls /dev/ttyACM* /dev/ttyUSB*` (often /dev/ttyACM0).
+docker run --rm -p 8777:8777 \
+  --device=/dev/ttyACM0 \
+  --group-add dialout \
+  spoolman-niimbot
+```
+
+Then open `http://<host>:8777`.
+
+> **USB caveat:** printing needs the host's USB serial port passed into the
+> container. This works on a **Linux host** with `--device=...`. On **Docker
+> Desktop (Windows/macOS)** the engine runs in a VM with no host USB access, so
+> the web UI and label **preview** work but **printing does not** — run
+> `python webapp.py` directly on those hosts to print.
+
 ## Quick start — web app
 
 ```bash
