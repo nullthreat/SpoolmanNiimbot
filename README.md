@@ -14,6 +14,8 @@ Bluetooth.
 > can't reach a USB printer on someone else's computer, so this is a
 > **local** app (served to `localhost`), not a hosted multi-user service.
 
+![Spoolman to Niimbot web app: spools grouped by material on the left, label preview and print options on the right](https://github.com/user-attachments/assets/d2497c86-9b3f-4baa-a7c4-e281234351ca)
+
 ## Quick start
 
 ```bash
@@ -32,7 +34,6 @@ No Spoolman? Print PNGs you exported from it instead:
 ```bash
 python cli/print_labels.py mylabel.png --port COM3
 ```
-<img width="1045" height="623" alt="image" src="https://github.com/user-attachments/assets/d2497c86-9b3f-4baa-a7c4-e281234351ca" />
 
 ## Requirements
 
