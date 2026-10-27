@@ -1,0 +1,9 @@
+# Core (printing + image rendering)
+pillow>=10
+pyserial>=3.5
+qrcode>=7.4
+
+# Web app + Spoolman integration
+fastapi>=0.110
+uvicorn[standard]>=0.27
+httpx>=0.26

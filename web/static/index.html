@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Spoolman → Niimbot B1</title>
+<style>
+  :root {
+    --bg: #0f1419; --panel: #1a222c; --panel2: #222c38; --line: #2e3a48;
+    --text: #e6edf3; --muted: #8b98a5; --accent: #3b82f6; --accent2: #2563eb;
+    --ok: #22c55e; --err: #ef4444;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+         background: var(--bg); color: var(--text); }
+  header { padding: 16px 24px; border-bottom: 1px solid var(--line); display: flex;
+           align-items: center; gap: 12px; }
+  header h1 { font-size: 16px; margin: 0; font-weight: 600; }
+  header .status { margin-left: auto; font-size: 13px; color: var(--muted); }
+  .wrap { display: grid; grid-template-columns: 1fr 360px; gap: 0; height: calc(100vh - 57px); }
+  .left { padding: 20px 24px; overflow: auto; }
+  .right { border-left: 1px solid var(--line); padding: 20px 24px; overflow: auto;
+           background: var(--panel); }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  input[type=text], select { background: var(--panel2); border: 1px solid var(--line);
+      color: var(--text); padding: 8px 10px; border-radius: 8px; font-size: 14px; }
+  input[type=text] { flex: 1; min-width: 180px; }
+  button { background: var(--accent); color: white; border: 0; padding: 9px 16px;
+      border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  button:hover { background: var(--accent2); }
+  button.ghost { background: var(--panel2); color: var(--text); border: 1px solid var(--line); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+       margin: 16px 0 8px; }
+  .left h2:first-child { margin-top: 0; }
+  .filterbar { margin-bottom: 4px; }
+  .filterbar input { flex: 1; min-width: 160px; }
+  .filterbar select { flex: none; }
+  .groups { margin-top: 12px; }
+  .group { margin-bottom: 14px; }
+  .group-head { display: flex; align-items: baseline; gap: 8px; margin: 0 0 6px;
+      font-size: 12px; font-weight: 700; letter-spacing: .04em; color: var(--text);
+      border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+  .group-head .gcount { color: var(--muted); font-weight: 400; font-size: 11px; }
+  .group-head .gsel { margin-left: auto; color: var(--accent); font-weight: 500;
+      font-size: 11px; cursor: pointer; }
+  .group-head .gsel:hover { text-decoration: underline; }
+  .spools { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 6px; }
+  .spool { display: flex; align-items: center; gap: 9px; padding: 6px 9px;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+      cursor: pointer; min-width: 0; }
+  .spool:hover { border-color: var(--accent); }
+  .spool.sel { border-color: var(--accent); background: #16263f; }
+  .swatch { width: 16px; height: 16px; border-radius: 4px; border: 1px solid #0006; flex: none; }
+  .spool .meta { flex: 1; min-width: 0; }
+  .spool .name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .spool .sub { color: var(--muted); font-size: 11px; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; }
+  .spool input { width: 16px; height: 16px; accent-color: var(--accent); flex: none; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+  /* Right-panel controls fill the padded column without touching the edge. */
+  .right .field > select { width: 100%; }
+  .right .row { width: 100%; }
+  .right .row select { flex: 1; min-width: 0; }
+  .right .row button.ghost { flex: none; }
+  .preview { background: white; border-radius: 10px; padding: 10px; display: flex;
+      justify-content: center; align-items: center; min-height: 120px; }
+  .preview img { image-rendering: pixelated; max-width: 100%; border: 1px solid #ddd; }
+  .toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .toggle input { width: 16px; height: 16px; accent-color: var(--accent); }
+  .msg { margin-top: 12px; font-size: 13px; padding: 8px 12px; border-radius: 8px; display: none; }
+  .msg.show { display: block; }
+  .msg.ok { background: #0d2a16; color: var(--ok); }
+  .msg.err { background: #2a0d0d; color: var(--err); }
+  .results { margin-top: 10px; font-size: 13px; }
+  .results div { padding: 2px 0; }
+  .count { color: var(--muted); font-size: 13px; margin-left: 8px; }
+  .printbtn { width: 100%; margin-top: 16px; padding: 12px; font-size: 15px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🖨️ Spoolman → Niimbot B1</h1>
+  <div class="status" id="status">not connected</div>
+</header>
+
+<div class="wrap">
+  <!-- LEFT: spool list -->
+  <div class="left">
+    <h2>Spoolman</h2>
+    <div class="row">
+      <input type="text" id="url" placeholder="http://spoolman-host:7912" />
+      <button id="loadBtn">Load spools</button>
+      <span class="toggle" style="margin:0"><input type="checkbox" id="archived"><label style="margin:0">archived</label></span>
+    </div>
+
+    <h2>Spools <span class="count" id="count"></span>
+      <button class="ghost" id="selAll" style="float:right;padding:4px 10px;font-size:12px">select all</button>
+      <button class="ghost" id="selNone" style="float:right;padding:4px 10px;font-size:12px;margin-right:6px">clear</button>
+    </h2>
+    <div class="row filterbar">
+      <input type="text" id="search" placeholder="Search name, brand, color…" />
+      <select id="matFilter"><option value="">All types</option></select>
+      <span class="count" id="shownCount"></span>
+    </div>
+    <div class="groups" id="spools"></div>
+  </div>
+
+  <!-- RIGHT: options + preview + print -->
+  <div class="right">
+    <h2>Label</h2>
+    <div class="field">
+      <label>Printer</label>
+      <select id="printer"></select>
+    </div>
+    <div class="field">
+      <label>Template</label>
+      <select id="template"></select>
+    </div>
+    <div class="toggle"><input type="checkbox" id="qr" checked><label>Include QR code</label></div>
+    <div class="toggle"><input type="checkbox" id="weight"><label>Include remaining weight</label></div>
+
+    <h2>Preview</h2>
+    <div class="preview" id="preview"><span style="color:#999">select a spool</span></div>
+
+    <h2>Printer</h2>
+    <div class="field">
+      <label>Port</label>
+      <div class="row">
+        <select id="port"><option value="">auto-detect</option></select>
+        <button class="ghost" id="refreshPortsBtn" title="Rescan for printers">↻</button>
+        <button class="ghost" id="infoBtn">info</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Density (1–5)</label>
+      <select id="density">
+        <option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option>
+      </select>
+    </div>
+
+    <button class="printbtn" id="printBtn" disabled>Print selected (0)</button>
+    <div class="msg" id="msg"></div>
+    <div class="results" id="results"></div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+let spools = [], selected = new Set(), lastPreviewId = null;
+
+function urlVal() { return $('#url').value.trim().replace(/\/$/, ''); }
+function setStatus(t) { $('#status').textContent = t; }
+function showMsg(t, ok) { const m = $('#msg'); m.textContent = t; m.className = 'msg show ' + (ok ? 'ok' : 'err'); }
+function hideMsg() { $('#msg').className = 'msg'; }
+
+async function loadPorts(manual) {
+  try {
+    const sel = $('#port');
+    const prev = sel.value;  // preserve the user's current choice across a rescan
+    const r = await fetch('/api/ports'); const d = await r.json();
+    sel.innerHTML = '<option value="">auto-detect</option>';
+    d.ports.forEach(p => {
+      const o = document.createElement('option');
+      o.value = p.device;
+      let label = `${p.device} — ${p.description}`;
+      if (p.detected_model) label += ' • Niimbot';
+      o.textContent = label;
+      sel.appendChild(o);
+    });
+    // Keep the previous selection if it's still present; else auto-select the
+    // detected Niimbot port.
+    if (prev && [...sel.options].some(o => o.value === prev)) {
+      sel.value = prev;
+    } else if (d.auto) {
+      sel.value = d.auto;
+    }
+    // Auto-select the detected printer model, and tell the user.
+    if (d.detected_printer) {
+      const pSel = $('#printer');
+      if ([...pSel.options].some(o => o.value === d.detected_printer)) {
+        pSel.value = d.detected_printer;
+        const name = pSel.options[pSel.selectedIndex].textContent;
+        setStatus(`detected ${name}`);
+      }
+    } else if (manual) {
+      setStatus('no Niimbot detected');
+    }
+  } catch (e) {}
+}
+
+async function loadSpools() {
+  hideMsg(); $('#spools').innerHTML = '<span style="color:#999">loading…</span>';
+  const arch = $('#archived').checked;
+  try {
+    const r = await fetch(`/api/spools?url=${encodeURIComponent(urlVal())}&include_archived=${arch}`);
+    if (!r.ok) { const e = await r.json(); throw new Error(e.detail || r.statusText); }
+    const d = await r.json();
+    spools = d.spools; selected.clear(); populateMaterials(); renderSpools();
+    setStatus(`connected · ${spools.length} spools`);
+    // Remember a working URL for next time.
+    try { localStorage.setItem('spoolmanUrl', urlVal()); } catch (e) {}
+  } catch (e) {
+    $('#spools').innerHTML = '';
+    showMsg('Could not load spools: ' + e.message, false);
+    setStatus('not connected');
+  }
+}
+
+function populateMaterials() {
+  const mats = [...new Set(spools.map(s => s.material).filter(Boolean))].sort();
+  const sel = $('#matFilter'), cur = sel.value;
+  sel.innerHTML = '<option value="">All types</option>' +
+    mats.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
+  sel.value = cur;
+}
+
+function filteredSpools() {
+  const q = $('#search').value.trim().toLowerCase();
+  const mat = $('#matFilter').value;
+  return spools.filter(s => {
+    if (mat && s.material !== mat) return false;
+    if (!q) return true;
+    return [s.name, s.vendor, s.material].some(f => (f || '').toLowerCase().includes(q));
+  });
+}
+
+function makeCard(s) {
+  const el = document.createElement('div');
+  el.className = 'spool' + (selected.has(s.id) ? ' sel' : '');
+  const color = s.color_hex ? ('#' + s.color_hex) : '#ccc';
+  el.innerHTML = `
+    <input type="checkbox" ${selected.has(s.id) ? 'checked' : ''}>
+    <div class="swatch" style="background:${color}"></div>
+    <div class="meta">
+      <div class="name">${esc(s.name) || '(no name)'}</div>
+      <div class="sub">${esc(s.vendor)}${s.archived ? ' · archived' : ''}</div>
+    </div>`;
+  el.onclick = (ev) => {
+    if (ev.target.tagName !== 'INPUT') el.querySelector('input').checked = !el.querySelector('input').checked;
+    toggle(s.id, el.querySelector('input').checked); el.classList.toggle('sel');
+    preview(s.id);
+  };
+  return el;
+}
+
+function renderSpools() {
+  const box = $('#spools'); box.innerHTML = '';
+  $('#count').textContent = spools.length ? `(${spools.length})` : '';
+
+  const list = filteredSpools();
+  $('#shownCount').textContent = list.length === spools.length
+    ? '' : `showing ${list.length}`;
+
+  if (!list.length) {
+    box.innerHTML = '<span style="color:#999">no spools match</span>';
+    updatePrintBtn(); return;
+  }
+
+  // group by material
+  const groups = {};
+  list.forEach(s => { (groups[s.material || 'Other'] ??= []).push(s); });
+  const names = Object.keys(groups).sort();
+
+  names.forEach(mat => {
+    const items = groups[mat];
+    const g = document.createElement('div'); g.className = 'group';
+    const head = document.createElement('div'); head.className = 'group-head';
+    head.innerHTML = `${esc(mat)} <span class="gcount">${items.length}</span>
+                      <span class="gsel">select all</span>`;
+    head.querySelector('.gsel').onclick = (e) => {
+      e.stopPropagation();
+      items.forEach(s => selected.add(s.id)); renderSpools();
+    };
+    g.appendChild(head);
+    const grid = document.createElement('div'); grid.className = 'spools';
+    items.forEach(s => grid.appendChild(makeCard(s)));
+    g.appendChild(grid);
+    box.appendChild(g);
+  });
+  updatePrintBtn();
+}
+
+function esc(t) { return (t || '').replace(/[<>&]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])); }
+function toggle(id, on) { on ? selected.add(id) : selected.delete(id); updatePrintBtn(); }
+function updatePrintBtn() {
+  $('#printBtn').textContent = `Print selected (${selected.size})`;
+  $('#printBtn').disabled = selected.size === 0;
+}
+
+function preview(id) {
+  lastPreviewId = id;
+  const printer = $('#printer').value, template = $('#template').value;
+  const qr = $('#qr').checked, weight = $('#weight').checked;
+  const src = `/api/preview?url=${encodeURIComponent(urlVal())}&spool_id=${id}` +
+    `&printer=${printer}&template=${template}&qr=${qr}&weight=${weight}&_=${Date.now()}`;
+  $('#preview').innerHTML = `<img src="${src}" alt="preview">`;
+}
+
+async function loadOptions() {
+  try {
+    const d = await (await fetch('/api/options')).json();
+    const pSel = $('#printer'), tSel = $('#template');
+    pSel.innerHTML = d.printers.map(p =>
+      `<option value="${p.key}"${p.key === d.default_printer ? ' selected' : ''}>${p.label}</option>`).join('');
+    tSel.innerHTML = d.templates.map(t =>
+      `<option value="${t.key}"${t.key === d.default_template ? ' selected' : ''}>${t.label}</option>`).join('');
+  } catch (e) {}
+}
+
+$('#loadBtn').onclick = loadSpools;
+// select all / clear operate on the currently-filtered set
+$('#selAll').onclick = () => { filteredSpools().forEach(s => selected.add(s.id)); renderSpools(); };
+$('#selNone').onclick = () => { selected.clear(); renderSpools(); };
+$('#search').oninput = renderSpools;
+$('#matFilter').onchange = renderSpools;
+['#printer', '#template', '#qr', '#weight'].forEach(id => $(id).onchange = () => { if (lastPreviewId) preview(lastPreviewId); });
+
+$('#refreshPortsBtn').onclick = () => loadPorts(true);
+
+$('#infoBtn').onclick = async () => {
+  hideMsg();
+  try {
+    const r = await fetch('/api/printer?port=' + encodeURIComponent($('#port').value));
+    if (!r.ok) { const e = await r.json(); throw new Error(e.detail); }
+    const d = await r.json();
+    let t = `Port ${d.port} · battery ${d.battery ?? '?'}`;
+    if (d.rfid) t += ` · roll: ${d.rfid.total_len - d.rfid.used_len}/${d.rfid.total_len} left`;
+    showMsg(t, true);
+  } catch (e) { showMsg('Printer: ' + e.message, false); }
+};
+
+$('#printBtn').onclick = async () => {
+  hideMsg(); $('#results').innerHTML = '';
+  $('#printBtn').disabled = true; $('#printBtn').textContent = 'Printing…';
+  try {
+    const r = await fetch('/api/print', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        url: urlVal(), spool_ids: [...selected],
+        printer: $('#printer').value, template: $('#template').value,
+        qr: $('#qr').checked, weight: $('#weight').checked,
+        density: parseInt($('#density').value), port: $('#port').value
+      })
+    });
+    if (!r.ok) { const e = await r.json(); throw new Error(e.detail); }
+    const d = await r.json();
+    const ok = d.results.filter(x => x.ok).length;
+    showMsg(`Printed ${ok}/${d.results.length} on ${d.port}`, ok === d.results.length);
+    $('#results').innerHTML = d.results.map(x =>
+      `<div>${x.ok ? '✅' : '❌'} spool #${x.spool_id}${x.error ? ' — ' + esc(x.error) : ''}</div>`).join('');
+  } catch (e) { showMsg('Print failed: ' + e.message, false); }
+  finally { updatePrintBtn(); }
+};
+
+// Restore the last-used Spoolman URL and auto-load its spools.
+try {
+  const saved = localStorage.getItem('spoolmanUrl');
+  if (saved) { $('#url').value = saved; loadSpools(); }
+} catch (e) {}
+
+// Load templates/printers first, then ports (which may auto-select a model).
+loadOptions().then(loadPorts);
+</script>
+</body>
+</html>

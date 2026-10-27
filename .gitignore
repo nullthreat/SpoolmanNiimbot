@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Generated label images / test artifacts
+previews*/
+preview*/
+testdata/
+zip_sample/
+pair_test/
+*.preview.png
+calibration_*.png
+calib_split_*.png
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
