@@ -8,7 +8,7 @@ Bluetooth.
   are rendered locally (filament type, brand, name, and a QR that links back to
   the spool in Spoolman).
 - **CLI tools** — print label PNGs you've exported from Spoolman (single, a
-  folder, or a zip), plus a two-up mode for split cable-flag stock.
+  folder, or a zip).
 
 > **Scope:** this runs on the machine the printer is plugged into. A web server
 > can't reach a USB printer on someone else's computer, so this is a
@@ -79,17 +79,22 @@ python webapp.py
 In the browser:
 1. Enter your Spoolman URL (e.g. `http://spoolman-host:7912`) and **Load spools**.
 2. Spools are grouped by material; search or filter by type, then select some.
-3. Pick your **printer** (B1 or B1 Pro), **template** (38×25, 50×30, or 40×15
-   two-up), **port** (e.g. `COM3`), and density.
+3. Pick your **printer** (B1 or B1 Pro), **template** (50×30 or 38×25, each
+   in the standard layout or style B),
+   **port** (e.g. `COM3`), and density.
 4. Check the live **preview**, then **Print**.
 
-The label layout: filament **type** and **brand** stacked above the **name**
-(the hero), with a QR code anchored on the right that links to the spool.
+The label layout: the filament **type** as a bold black tag (with the optional
+remaining weight beside it), the **brand** below, then the **name** as the
+hero, with a QR code on the right that links to the spool. **Style B** frames
+the label, runs the material vertically down a black spine, and puts the brand
+and weight in a footer.
 
 ### Printers and templates
 
 Built-in printers: **Niimbot B1** (203 dpi) and **B1 Pro** (300 dpi). Built-in
-templates: **38×25**, **50×30**, and **40×15** (two-up). Adding more is a
+templates: **50×30** (default) and **38×25**, each in the standard layout and
+style B. Adding more is a
 one-line change in `core/models.py` — see [LLM.md](LLM.md).
 
 ## CLI — print exported PNGs
@@ -120,29 +125,17 @@ Source can be a single `.png`, a folder of PNGs, or a `.zip` of PNGs.
 | `--copies` | 1 | Impressions per label. |
 | `--preview` / `--yes` | off | Write previews and exit / skip the prompt. |
 
-### Two-up split stock (40×15 /2) — `print_split_labels.py`
-
-For stacked cable-flag stock: a 40×30 mm label die-cut into two 40×15 mm cells.
-Packs **two different** labels per physical unit (one per cell), so you peel the
-halves apart and use one per filament. Labels pair in sorted order: 1+2, 3+4, …
-
-```bash
-python cli/print_split_labels.py labels.zip --preview
-python cli/print_split_labels.py labels.zip --port COM3 --yes
-```
-
 ## Calibration
 
 Print a test pattern and compare it to your physical label edges / die-cut.
 
 ```bash
-python cli/calibrate.py --port COM3                  # single stock (38×25)
-python cli/calibrate_split.py --port COM3 -W 40 -H 30  # split stock, top/bottom cells
+python cli/calibrate.py --port COM3
 ```
 
 ## How it maps to the hardware
 
-- B1 resolution: **8 px/mm (~203 dpi)**. 38×25 mm = 304×200 px; 40×30 mm = 320×240 px.
+- B1 resolution: **8 px/mm (~203 dpi)**. 50×30 mm = 400×240 px; 38×25 mm = 304×200 px.
 - Max print width: **384 px**.
 - Images are pure black/white (no dithering) so text and QR codes stay crisp.
 - RFID-tagged rolls report SKU, type, and remaining count (`--info`), but **not**
@@ -160,9 +153,7 @@ core/                  # the library
   spoolman.py          #   minimal Spoolman REST API client
 cli/                   # standalone command-line tools
   print_labels.py      #   print standard single labels
-  print_split_labels.py#   print two-up split stock
-  calibrate.py         #   calibration test pattern (single)
-  calibrate_split.py   #   calibration test pattern (split)
+  calibrate.py         #   calibration test pattern
 web/static/index.html  # the web UI (single page)
 ```
 

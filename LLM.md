@@ -23,8 +23,14 @@ Key facts:
 - Layouts are composed at a **base resolution of 8 px/mm** (`render.BASE_PX_PER_MM`),
   then scaled to the target printer's `px_per_mm` by `render._scale_to`. So you
   design once in "8 px/mm space" and every printer gets a correctly-sized image.
-- The render styles are `"single"` (text column + QR anchor) and `"cell"`
-  (compact, for two-up split stock).
+- Two render styles, both tuned for 50×30 with 38×25 as a fallback (sizes
+  derive from the label height):
+  - `"single"` (`render_single`): text column + QR anchored on the right.
+  - `"b"` (`render_b`): rounded frame with a black spine carrying the material
+    vertically; the name is the hero beside a top-right QR (wrapping under it
+    when long); brand + weight in a footer under a rule.
+- Templates wider than a printer's head are clamped to its printable width in
+  `webapp.render_label` (50 mm stock on the B1's 48 mm head).
 
 ## Add a new label template (most common task)
 
@@ -37,7 +43,7 @@ Key facts:
    ```
 
    - `key`: a stable, unique id (used by the API/UI). Convention: `style_WxH`.
-   - `style`: `"single"` or `"cell"` — pick an existing render function.
+   - `style`: `"single"` or `"b"` — pick an existing render function.
    - `width_mm` / `height_mm`: the physical label size.
 
 3. That's it. The web UI's Template dropdown reads from `/api/options`, which
@@ -53,15 +59,17 @@ Key facts:
 
 ### If the template needs a genuinely new layout
 
-Only if `"single"`/`"cell"` don't fit the shape:
+Only if `"single"`/`"b"` don't fit the shape:
 1. Add a `render_<name>(spool, spoolman_url, *, width_mm, height_mm, include_qr,
    px_per_mm=BASE_PX_PER_MM)` function in `core/render.py`. Compose at
    `BASE_PX_PER_MM`, return `_scale_to(img, width_mm, height_mm, px_per_mm)`.
 2. Give it a new `style` value and branch to it in `webapp.render_label`
    (and `cli/print_labels.py` if you want CLI support).
-3. Reuse the helpers: `_qr_scaled`, `_fit_name`, `_fit_text`, `_ellipsize`.
-   `_fit_name` already guarantees the name never overflows (wrap up to 3 lines,
-   then ellipsize) — keep that guarantee for any new layout.
+3. Reuse the helpers: `_qr_scaled`, `_fit_block`, `_fit_flow`, `_fit_line`, `_badge`, `_vertical_text`,
+   `_draw_lines`, `_ellipsize`. `_fit_block` already guarantees text never
+   overflows (wrap up to N lines, then ellipsize) — keep that guarantee for any
+   new layout. Lay text out on cap heights/baselines (`_cap_height`,
+   `anchor="ls"`), not bboxes, so spacing doesn't vary with the glyphs.
 
 ## Add a new printer model
 

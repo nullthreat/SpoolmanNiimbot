@@ -11,7 +11,6 @@ preview*/
 testdata/
 *.preview.png
 calibration_*.png
-calib_split_*.png
 # docs/editor
 .vscode/
 .idea/

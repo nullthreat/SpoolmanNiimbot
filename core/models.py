@@ -19,6 +19,9 @@ class PrinterModel:
     px_per_mm: float    # print resolution. B1 = 8 (~203 dpi); B1 Pro ~11.81 (300 dpi)
     max_width_px: int   # widest image the print head accepts
     usb_serial_prefixes: tuple[str, ...] = ()  # USB serial-number prefixes that identify this model
+    # Nudge printed content to correct the print origin (negative = up / left).
+    print_offset_down_mm: float = 0.0
+    print_offset_right_mm: float = 0.0
 
 
 # Niimbot's USB vendor id (seen as "VID:PID=3513:0002" on the B1).
@@ -31,7 +34,7 @@ class Template:
     label: str          # human name shown in the UI
     width_mm: float
     height_mm: float
-    style: str          # render style: "single" or "cell"
+    style: str          # render style: "single" or "b"
     note: str = ""      # optional hint shown to the user
 
 
@@ -39,8 +42,11 @@ class Template:
 # px_per_mm is the knob that makes a template render crisp on each printer.
 PRINTER_MODELS: list[PrinterModel] = [
     # The B1 reports a USB serial number like "B1-XXXXXXXX".
+    # Prints sit ~0.5 mm high and ~0.25 mm right on the B1 (measured on
+    # printed labels), so content is nudged down and left.
     PrinterModel("b1", "Niimbot B1 (203 dpi)", 8.0, 384,
-                 usb_serial_prefixes=("B1-",)),
+                 usb_serial_prefixes=("B1-",),
+                 print_offset_down_mm=0.5, print_offset_right_mm=-0.25),
     # B1 Pro prints at 300 dpi = 300/25.4 ~= 11.81 px/mm. Head width scales
     # with dpi, so ~50mm usable -> ~591 px. Serial prefixes are a best guess
     # ("B1P"/"B1-PRO") until confirmed on real hardware.
@@ -77,14 +83,14 @@ def detect_model(serial_number: str | None, vid: int | None = None) -> str | Non
 
 # --- Label templates --------------------------------------------------------
 TEMPLATES: list[Template] = [
-    Template("single_38x25", "38×25 mm (single)", 38.0, 25.0, "single"),
-    Template("single_50x30", "50×30 mm (single, large)", 50.0, 30.0, "single"),
-    Template("cell_40x15", "40×15 mm (two-up cell)", 40.0, 15.0, "cell",
-             note="For 40×15/2 split stock; use the split CLI to pack two per unit."),
+    Template("single_50x30", "50×30 mm", 50.0, 30.0, "single"),
+    Template("b_50x30", "50×30 mm — style B", 50.0, 30.0, "b"),
+    Template("single_38x25", "38×25 mm", 38.0, 25.0, "single"),
+    Template("b_38x25", "38×25 mm — style B", 38.0, 25.0, "b"),
 ]
 
 TEMPLATE_BY_KEY = {t.key: t for t in TEMPLATES}
-DEFAULT_TEMPLATE = "single_38x25"
+DEFAULT_TEMPLATE = "single_50x30"
 
 
 def resolve(printer_key: str | None, template_key: str | None) -> tuple[PrinterModel, Template]:

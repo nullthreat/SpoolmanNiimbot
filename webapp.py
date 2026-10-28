@@ -36,15 +36,13 @@ app = FastAPI(title="Spoolman → Niimbot B1")
 
 def render_label(spool, spoolman_url, printer_key, template_key, include_qr, include_weight):
     printer, template = models.resolve(printer_key, template_key)
-    if template.style == "cell":
-        return render.render_cell(
-            spool, spoolman_url,
-            width_mm=template.width_mm, height_mm=template.height_mm,
-            include_qr=include_qr, px_per_mm=printer.px_per_mm,
-        )
-    return render.render_single(
+    # Stock can be wider than the print head (50 mm labels on the B1's 48 mm
+    # head), so lay out only the printable width.
+    width_mm = min(template.width_mm, printer.max_width_px / printer.px_per_mm)
+    fn = render.render_b if template.style == "b" else render.render_single
+    return fn(
         spool, spoolman_url,
-        width_mm=template.width_mm, height_mm=template.height_mm,
+        width_mm=width_mm, height_mm=template.height_mm,
         include_qr=include_qr, include_weight=include_weight,
         px_per_mm=printer.px_per_mm,
     )
@@ -94,7 +92,14 @@ def api_printer(port: str | None = Query(None)):
         port = find_serial_port(port)
     except RuntimeError as e:
         raise HTTPException(400, str(e))
-    transport = SerialTransport(port)
+    try:
+        transport = SerialTransport(port)
+    except Exception as e:  # noqa: BLE001 - serial open failure (e.g. port busy)
+        raise HTTPException(
+            400,
+            f"Could not open printer on {port}: {e}. "
+            "Is it plugged in, and not in use by another print?",
+        )
     try:
         p = PrinterClient(transport)
         info = {"port": port}
@@ -194,13 +199,18 @@ def api_print(payload: dict = Body(...)):
             "Is the Niimbot B1 plugged in over USB and powered on?",
         )
 
+    printer = models.resolve(printer_key, template_key)[0]
     results = []
     try:
         pc = PrinterClient(transport)
         for spool in spools:
             img = render_label(spool, url, printer_key, template_key, qr, weight)
+            img = render.shift(img, printer.print_offset_down_mm,
+                               printer.print_offset_right_mm, printer.px_per_mm)
             try:
-                pc.print_image(img, density=density)
+                # 0.01s line pacing printed blank labels on the B1; 0.02s
+                # (the CLI's default) prints reliably.
+                pc.print_image(img, density=density, line_delay=0.02)
                 results.append({"spool_id": spool["id"], "ok": True})
             except Exception as e:  # noqa: BLE001
                 results.append({"spool_id": spool["id"], "ok": False, "error": str(e)})
