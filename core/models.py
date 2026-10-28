@@ -30,11 +30,11 @@ NIIMBOT_USB_VID = 0x3513
 
 @dataclass(frozen=True)
 class Template:
-    key: str            # stable id used in the API/UI (e.g. "single_38x25")
+    key: str            # stable id used in the API/UI (e.g. "framed_38x25")
     label: str          # human name shown in the UI
     width_mm: float
     height_mm: float
-    style: str          # render style: "single" or "b"
+    style: str          # render style: "framed" or "classic"
     note: str = ""      # optional hint shown to the user
 
 
@@ -83,14 +83,14 @@ def detect_model(serial_number: str | None, vid: int | None = None) -> str | Non
 
 # --- Label templates --------------------------------------------------------
 TEMPLATES: list[Template] = [
-    Template("single_50x30", "50×30 mm", 50.0, 30.0, "single"),
-    Template("b_50x30", "50×30 mm — style B", 50.0, 30.0, "b"),
-    Template("single_38x25", "38×25 mm", 38.0, 25.0, "single"),
-    Template("b_38x25", "38×25 mm — style B", 38.0, 25.0, "b"),
+    Template("framed_50x30", "50×30 mm", 50.0, 30.0, "framed"),
+    Template("classic_50x30", "50×30 mm — style B", 50.0, 30.0, "classic"),
+    Template("framed_38x25", "38×25 mm", 38.0, 25.0, "framed"),
+    Template("classic_38x25", "38×25 mm — style B", 38.0, 25.0, "classic"),
 ]
 
 TEMPLATE_BY_KEY = {t.key: t for t in TEMPLATES}
-DEFAULT_TEMPLATE = "single_50x30"
+DEFAULT_TEMPLATE = "framed_50x30"
 
 
 def resolve(printer_key: str | None, template_key: str | None) -> tuple[PrinterModel, Template]:

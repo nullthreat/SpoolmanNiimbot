@@ -1,11 +1,14 @@
 """
 Render a Spoolman spool into a printable label image.
 
-Produces a black/white image composed at the B1's native 8 px/mm. One layout,
-"single": a text column (material badge, brand, filament name, optional
-weight) with a QR on the right. Tuned for 50x30 mm (400x240 px), with 38x25 mm
-(304x200 px) as a fallback; sizes derive from the label height so both share
-the same proportions.
+Produces a black/white image composed at the B1's native 8 px/mm. Two layouts,
+both tuned for 50x30 mm (400x240 px) with 38x25 mm (304x200 px) as a fallback;
+sizes derive from the label height so both share the same proportions:
+  - "framed" (the main one): a rounded frame with a black spine carrying the
+    material vertically; the name as the hero beside a top-right QR; brand and
+    weight in a footer.
+  - "classic" (shown as "style B"): a text column (material badge, brand,
+    filament name, optional weight) with a QR on the right.
 
 The QR encodes a link back to the spool in Spoolman so you can scan a label and
 jump straight to it.
@@ -206,7 +209,7 @@ def shift(img: Image.Image, down_mm: float, right_mm: float, px_per_mm: float) -
     return out
 
 
-def render_single(
+def render_classic(
     spool: dict,
     spoolman_url: str = "",
     width_mm: float = 50.0,
@@ -358,7 +361,7 @@ def _vertical_text(text, font, fill=255, bg=0) -> Image.Image:
     return tmp.rotate(90, expand=True)
 
 
-def render_b(
+def render_framed(
     spool: dict,
     spoolman_url: str = "",
     width_mm: float = 50.0,
@@ -367,7 +370,7 @@ def render_b(
     include_weight: bool = False,
     px_per_mm: float = BASE_PX_PER_MM,
 ) -> Image.Image:
-    """Style B: a framed label. The frame's left edge widens into a black
+    """Framed label (the main layout). The frame's left edge widens into a black
     spine carrying the material in large vertical type. The filament name is
     the hero, filling the box beside a QR in the top-right corner; brand and
     weight share a full-width footer under a rule."""

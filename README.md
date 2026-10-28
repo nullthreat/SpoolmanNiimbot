@@ -80,20 +80,19 @@ In the browser:
 1. Enter your Spoolman URL (e.g. `http://spoolman-host:7912`) and **Load spools**.
 2. Spools are grouped by material; search or filter by type, then select some.
 3. Pick your **printer** (B1 or B1 Pro), **template** (50×30 or 38×25, each
-   in the standard layout or style B),
-   **port** (e.g. `COM3`), and density.
+   in the main layout or style B), **port** (e.g. `COM3`), and density.
 4. Check the live **preview**, then **Print**.
 
-The label layout: the filament **type** as a bold black tag (with the optional
-remaining weight beside it), the **brand** below, then the **name** as the
-hero, with a QR code on the right that links to the spool. **Style B** frames
-the label, runs the material vertically down a black spine, and puts the brand
-and weight in a footer.
+The label layout: a rounded frame whose left edge is a black spine carrying
+the filament **type** in vertical letters; the **name** as the hero beside a
+QR code that links to the spool; the **brand** and optional remaining weight
+in a footer. **Style B** is a simpler column: the type as a bold black tag,
+the brand, then the name, with the QR on the right.
 
 ### Printers and templates
 
 Built-in printers: **Niimbot B1** (203 dpi) and **B1 Pro** (300 dpi). Built-in
-templates: **50×30** (default) and **38×25**, each in the standard layout and
+templates: **50×30** (default) and **38×25**, each in the main layout and
 style B. Adding more is a
 one-line change in `core/models.py` — see [LLM.md](LLM.md).
 

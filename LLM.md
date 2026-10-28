@@ -25,10 +25,12 @@ Key facts:
   design once in "8 px/mm space" and every printer gets a correctly-sized image.
 - Two render styles, both tuned for 50×30 with 38×25 as a fallback (sizes
   derive from the label height):
-  - `"single"` (`render_single`): text column + QR anchored on the right.
-  - `"b"` (`render_b`): rounded frame with a black spine carrying the material
-    vertically; the name is the hero beside a top-right QR (wrapping under it
-    when long); brand + weight in a footer under a rule.
+  - `"framed"` (`render_framed`, the main layout): rounded frame with a black
+    spine carrying the material vertically; the name is the hero beside a
+    top-right QR (wrapping under it when long); brand + weight in a footer
+    under a rule.
+  - `"classic"` (`render_classic`, shown in the UI as "style B"): text column
+    + QR anchored on the right.
 - Templates wider than a printer's head are clamped to its printable width in
   `webapp.render_label` (50 mm stock on the B1's 48 mm head).
 
@@ -38,12 +40,12 @@ Key facts:
 2. Append a `Template(...)` to the `TEMPLATES` list:
 
    ```python
-   Template("single_60x40", "60×40 mm (single, XL)", 60.0, 40.0, "single",
+   Template("framed_60x40", "60×40 mm (XL)", 60.0, 40.0, "framed",
             note="Optional hint shown in the UI"),
    ```
 
    - `key`: a stable, unique id (used by the API/UI). Convention: `style_WxH`.
-   - `style`: `"single"` or `"b"` — pick an existing render function.
+   - `style`: `"framed"` or `"classic"` — pick an existing render function.
    - `width_mm` / `height_mm`: the physical label size.
 
 3. That's it. The web UI's Template dropdown reads from `/api/options`, which
@@ -52,14 +54,14 @@ Key facts:
 4. Verify (no printer required):
 
    ```bash
-   python -c "import webapp; s={'id':1,'vendor':'Acme','material':'PLA','name':'Test','remaining_weight':500}; webapp.render_label(s,'http://x','b1','single_60x40',True,True).save('out.png')"
+   python -c "import webapp; s={'id':1,'vendor':'Acme','material':'PLA','name':'Test','remaining_weight':500}; webapp.render_label(s,'http://x','b1','framed_60x40',True,True).save('out.png')"
    ```
 
    Open `out.png` and confirm nothing overflows or collides.
 
 ### If the template needs a genuinely new layout
 
-Only if `"single"`/`"b"` don't fit the shape:
+Only if `"framed"`/`"classic"` don't fit the shape:
 1. Add a `render_<name>(spool, spoolman_url, *, width_mm, height_mm, include_qr,
    px_per_mm=BASE_PX_PER_MM)` function in `core/render.py`. Compose at
    `BASE_PX_PER_MM`, return `_scale_to(img, width_mm, height_mm, px_per_mm)`.

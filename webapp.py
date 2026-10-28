@@ -39,7 +39,7 @@ def render_label(spool, spoolman_url, printer_key, template_key, include_qr, inc
     # Stock can be wider than the print head (50 mm labels on the B1's 48 mm
     # head), so lay out only the printable width.
     width_mm = min(template.width_mm, printer.max_width_px / printer.px_per_mm)
-    fn = render.render_b if template.style == "b" else render.render_single
+    fn = render.render_classic if template.style == "classic" else render.render_framed
     return fn(
         spool, spoolman_url,
         width_mm=width_mm, height_mm=template.height_mm,
